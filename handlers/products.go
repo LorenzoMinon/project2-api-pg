@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -43,4 +44,29 @@ func (h *Handler) GetProducts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
 
+}
+
+func (h *Handler) GetProductByID(w http.ResponseWriter, r *http.Request) {
+	id_str := r.PathValue("id")
+	product_id, err := strconv.Atoi(id_str)
+	if err != nil {
+		http.Error(w, "error parsing id", http.StatusInternalServerError)
+		return
+	}
+	my_query := "SELECT id,name,price,description,stock FROM products WHERE id=$1"
+	row := h.DB.QueryRow(context.Background(), my_query, product_id)
+	var p Product
+	err = row.Scan(&p.ID, &p.Name, &p.Price, &p.Description, &p.Stock)
+	if err == pgx.ErrNoRows {
+		http.Error(w, "product not found", http.StatusNotFound)
+		return
+	}
+
+	data, err := json.Marshal(p) // filled Product with Scan()!
+	if err != nil {
+		http.Error(w, "error parsing to json", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
 }
