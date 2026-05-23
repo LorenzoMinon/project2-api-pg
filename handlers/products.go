@@ -127,3 +127,42 @@ func (h *Handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+func (h *Handler) UpdateStock(w http.ResponseWriter, r *http.Request) {
+	id_str := r.PathValue("id")
+	product_id, err := strconv.Atoi(id_str)
+	if err != nil {
+		http.Error(w, "error while parsing id to int", http.StatusInternalServerError)
+		return
+	}
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "error while reading body", http.StatusInternalServerError)
+		return
+	}
+	var p Product
+	err = json.Unmarshal(body, &p)
+	if err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+
+	my_query := "UPDATE products SET stock = $1 WHERE id = $2 RETURNING id,name,price,description,stock"
+	var updated Product
+	err = h.DB.QueryRow(context.Background(), my_query, p.Stock, product_id).Scan(&updated.ID, &updated.Name, &updated.Price, &updated.Description, &updated.Stock)
+	if err == pgx.ErrNoRows {
+		http.Error(w, "product not found", http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, "error while updating", http.StatusInternalServerError)
+		return
+	}
+	data, err := json.Marshal(updated)
+	if err != nil {
+		http.Error(w, "error while marshaling", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+}
