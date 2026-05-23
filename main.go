@@ -20,6 +20,7 @@ func main() {
 	http.HandleFunc("GET /products", h.GetProducts)
 	http.HandleFunc("GET /products/{id}", h.GetProductByID)
 	http.HandleFunc("POST /products", h.AddProduct)
+	http.HandleFunc("DELETE /products/{id}", h.DeleteProduct)
 	http.ListenAndServe(":8080", nil)
 
 }

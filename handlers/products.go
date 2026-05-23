@@ -104,3 +104,26 @@ func (h *Handler) AddProduct(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Write(data)
 }
+
+func (h *Handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	id_str := r.PathValue("id")
+	product_id, err := strconv.Atoi(id_str)
+	if err != nil {
+		http.Error(w, "error while parsing id to int", http.StatusInternalServerError)
+		return
+	}
+	my_query := "DELETE FROM products WHERE id = $1"
+	tag, err := h.DB.Exec(context.Background(), my_query, product_id)
+	if err != nil {
+		http.Error(w, "error while deleting from db", http.StatusInternalServerError)
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		http.Error(w, "couldn't find the product!", http.StatusNotFound)
+		return
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNoContent)
+	}
+
+}
