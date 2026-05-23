@@ -17,7 +17,7 @@ func main() {
 	}
 	h := handlers.Handler{DB: conn}
 	_ = h
-	//http.HandleFunc("GET /products", h.GetProducts)
+	http.HandleFunc("GET /products", h.GetProducts)
 	http.ListenAndServe(":8080", nil)
 
 }
